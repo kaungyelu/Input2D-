@@ -57,7 +57,7 @@ function normalizeReverseText(text) {
     normalized = normalized.replace(/(ဘရိတ်|ဘ|ဘီ|Bk|bk|B|b)/gi, 'ဘရိတ်');
     
     // ပါအတွက်
-    normalized = normalized.replace(/(ပါ|ပတ်|အပတ်|p|P)/gi, 'ပါ');
+    normalized = normalized.replace(/(ပါ|အပါ|ပတ်|အပတ်|p|P)/gi, 'ပါ');
     
     // အထူးစကားလုံးအားလုံးအတွက်
     normalized = normalizeAllSpecialText(normalized);
