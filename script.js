@@ -1,4 +1,5 @@
-// Global variables
+
+    // Global variables
     let bets = [];
     let totalAmount = 0;
     let closedNumbers = new Set();
@@ -35,13 +36,35 @@
 
     // Function to normalize brake text
     function normalizeBrakeText(text) {
-        return text.replace(/(ဘရိတ်|ဘ|ဘီ|Bk|bk|B)/gi, 'ဘရိတ်');
+        return text.replace(/(ဘရိတ်|ဘ|ဘီ|Bk|bk|B|b)/gi, 'ဘရိတ်');
     }
 
     // Function to normalize pa text
     function normalizePaText(text) {
         return text.replace(/(ပါ|ပတ်|အပတ်|p|P)/gi, 'ပါ');
     }
+ // Function to normalize pa text
+    function normalizePaText(text) {
+        return text.replace(/(ပူး|အပူ|ပူ)/gi, 'အပူး');
+    }
+ // Function to normalize pa text
+    function normalizePaText(text) {
+        return text.replace(/(ပါဝ|ပဝ)/gi, 'ပါဝါ');
+    }
+ // Function to normalize pa text
+    function normalizePaText(text) {
+        return text.replace(/(နက|နခ|နက်ခက်|နတ်ခပ်)/gi, 'နက္ခ');
+    }
+ // Function to normalize pa text
+    function normalizePaText(text) {
+        return text.replace(/(ညက|သေးကြီး)/gi, 'ညီကို');
+    }
+ // Function to normalize pa text
+    function normalizePaText(text) {
+        return text.replace(/(ကည|ကြီးသေး)/gi, 'ကိုညီ');
+    }
+
+
 
     // Function to reverse a number
     function reverseNumber(n) {
@@ -72,55 +95,277 @@
     // All supported separators
     const allSeparators = /[\/\-\*\=\+\@\#\$\%\&\_\"\'\:\;\!\(\)\?\\\.\ ,]/;
 
-    // Function to prepare bets (A2 button) - Now empty
+    // Function to prepare bets (A2 button) - Paste from clipboard
     function prepareBets() {
-        // This function is now empty as requested
-        // User will fill this later when needed
-    }
-
-    // Function to add prepared bets with confirmation (A3 button)
-    function addPreparedBetsWithConfirmation() {
-        const inputText = betInput.value.trim();
-        if (!inputText) {
-            alert('လောင်းကြေးထည့်ပါ');
-            return;
-        }
-
-        const lines = inputText.split('\n');
-        preparedBets = [];
-        let hasError = false;
-
-        for (const line of lines) {
-            const trimmedLine = line.trim();
-            if (!trimmedLine) continue;
-
-            let normalizedLine = normalizeReverseText(trimmedLine);
-            normalizedLine = normalizeBrakeText(normalizedLine);
-            normalizedLine = normalizePaText(normalizedLine);
-
-            const lineBets = parseBetLine(normalizedLine);
-            if (lineBets.length > 0) {
-                preparedBets.push(...lineBets);
-            } else {
-                hasError = true;
-                console.log('Parse error for line:', normalizedLine);
-            }
-        }
-
-        if (preparedBets.length === 0 && hasError) {
-            alert('လောင်းကြေးဖော်မတ်မှားနေပါသည်');
-            return;
-        }
-
-        // Show preview alert like prepare button
-        const totalPreparedAmount = preparedBets.reduce((sum, bet) => sum + bet.amount, 0);
-        const confirmed = confirm(`ပြင်ဆင်ပြီးပါပြီ။\nစုစုပေါင်း ${preparedBets.length} ခု\n${totalPreparedAmount.toLocaleString()}\n\nOK နှိပ်ပြီးထည့်ပါ`);
+        // Change button text to indicate pasting
+        const originalText = a2Btn.textContent;
+        a2Btn.textContent = 'Pasting...';
+        a2Btn.disabled = true;
         
-        if (confirmed) {
-            addPreparedBets();
+        // Try to read from clipboard
+        if (navigator.clipboard && navigator.clipboard.readText) {
+            navigator.clipboard.readText()
+                .then(text => {
+                    if (text && text.trim()) {
+                        betInput.value = text.trim();
+                        a2Btn.textContent = 'Pasted!';
+                        setTimeout(() => {
+                            a2Btn.textContent = 'Paste';
+                            a2Btn.disabled = false;
+                        }, 1000);
+                    } else {
+                        a2Btn.textContent = 'No Text!';
+                        setTimeout(() => {
+                            a2Btn.textContent = 'Paste';
+                            a2Btn.disabled = false;
+                        }, 1000);
+                    }
+                })
+                .catch(err => {
+                    console.error('Clipboard read failed:', err);
+                    // Fallback: focus on input for manual paste
+                    betInput.focus();
+                    document.execCommand('paste');
+                    a2Btn.textContent = 'Use Ctrl+V';
+                    setTimeout(() => {
+                        a2Btn.textContent = 'Paste';
+                        a2Btn.disabled = false;
+                    }, 1500);
+                });
+        } else {
+            // Fallback for browsers without clipboard API
+            betInput.focus();
+            betInput.select();
+            a2Btn.textContent = 'Use Ctrl+V';
+            setTimeout(() => {
+                a2Btn.textContent = 'Paste';
+                a2Btn.disabled = false;
+            }, 1500);
         }
     }
 
+ // Function to add prepared bets with confirmation (A3 button)
+function addPreparedBetsWithConfirmation() {
+    const inputText = betInput.value.trim();
+    if (!inputText) {
+        alert('လောင်းကြေးထည့်ပါ');
+        return;
+    }
+
+    const lines = inputText.split('\n');
+    preparedBets = [];
+    const invalidLines = [];
+
+    for (let i = 0; i < lines.length; i++) {
+        const trimmedLine = lines[i].trim();
+        if (!trimmedLine) continue;
+
+        let normalizedLine = normalizeReverseText(trimmedLine);
+        normalizedLine = normalizeBrakeText(normalizedLine);
+        normalizedLine = normalizePaText(normalizedLine);
+
+        const lineBets = parseBetLine(normalizedLine);
+        if (lineBets.length > 0) {
+            preparedBets.push(...lineBets);
+        } else {
+            invalidLines.push(trimmedLine);
+        }
+    }
+
+    // Store invalid lines for copying
+    const invalidText = invalidLines.join('\n');
+    window.lastInvalidLines = invalidText;
+
+    // Show custom dialog with Copy button
+    showBetConfirmationDialog(preparedBets, invalidLines, invalidText);
+}
+
+// Custom confirmation dialog with Copy button
+function showBetConfirmationDialog(preparedBets, invalidLines, invalidText) {
+    // Create modal overlay
+    const overlay = document.createElement('div');
+    overlay.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0,0,0,0.5);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 1000;
+    `;
+
+    // Create dialog box
+    const dialog = document.createElement('div');
+    dialog.style.cssText = `
+        background: white;
+        border-radius: 10px;
+        padding: 20px;
+        width: 90%;
+        max-width: 400px;
+        max-height: 80vh;
+        overflow-y: auto;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+    `;
+
+    let content = '';
+    
+    if (preparedBets.length > 0) {
+        const totalPreparedAmount = preparedBets.reduce((sum, bet) => sum + bet.amount, 0);
+        content += `<h3 style="color: #27ae60; margin-bottom: 10px;">ပြင်ဆင်ပြီးပါပြီ။</h3>`;
+        content += `<p>စုစုပေါင်း: <strong>${preparedBets.length} ခု</strong></p>`;
+        content += `<p>စုစုပေါင်းငွေ: <strong style="color: #e74c3c;">${totalPreparedAmount.toLocaleString()}</strong></p>`;
+    }
+    
+    if (invalidLines.length > 0) {
+        if (preparedBets.length > 0) {
+            content += '<hr style="margin: 15px 0;">';
+        }
+        content += `<h4 style="color: #e74c3c; margin-bottom: 10px;">မဝင်သော လိုင်းများ (${invalidLines.length})</h4>`;
+        
+        // Show only first 5 lines to prevent overflow
+        const displayLines = invalidLines.slice(0, 5);
+        content += `<div style="background: #f8f9fa; padding: 10px; border-radius: 5px; margin-bottom: 10px; max-height: 150px; overflow-y: auto;">`;
+        displayLines.forEach((line, index) => {
+            content += `<div style="margin: 3px 0; font-family: monospace;">${line}</div>`;
+        });
+        
+        if (invalidLines.length > 5) {
+            content += `<div style="color: #7f8c8d; font-style: italic;">...နှင့် အခြား ${invalidLines.length - 5} လိုင်း</div>`;
+        }
+        content += `</div>`;
+    }
+
+    if (preparedBets.length === 0 && invalidLines.length > 0) {
+        content = `<h3 style="color: #e74c3c; margin-bottom: 15px;">ဘာမှမဝင်ပါ</h3>` + 
+                  `<p>မဝင်သော လိုင်းများ (${invalidLines.length})</p>` + 
+                  `<div style="background: #f8f9fa; padding: 10px; border-radius: 5px; margin: 10px 0; max-height: 200px; overflow-y: auto;">`;
+        invalidLines.forEach(line => {
+            content += `<div style="margin: 3px 0; font-family: monospace;">${line}</div>`;
+        });
+        content += `</div>`;
+    }
+
+    dialog.innerHTML = content;
+
+    // Create button container
+    const buttonContainer = document.createElement('div');
+    buttonContainer.style.cssText = `
+        display: flex;
+        gap: 10px;
+        margin-top: 20px;
+        justify-content: space-between;
+    `;
+
+    const cancelButton = document.createElement('button');
+    cancelButton.textContent = 'Cancel';
+    cancelButton.style.cssText = `
+        flex: 1;
+        padding: 10px;
+        background: #e74c3c;
+        color: white;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        font-family: 'Pyidaungsu', sans-serif;
+    `;
+    cancelButton.onclick = function() {
+        document.body.removeChild(overlay);
+    };
+
+    if (invalidLines.length > 0) {
+        const copyButton = document.createElement('button');
+        copyButton.textContent = 'Copy';
+        copyButton.style.cssText = `
+            flex: 1;
+            padding: 10px;
+            background: #3498db;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-family: 'Pyidaungsu', sans-serif;
+        `;
+        copyButton.onclick = function() {
+            navigator.clipboard.writeText(invalidText)
+                .then(() => {
+                    // Copy ယူပြီးရင် input field ထဲထည့်ပေးမယ်
+                    betInput.value = invalidText;
+                    copyButton.textContent = 'Copied!';
+                    copyButton.style.background = '#27ae60';
+                    
+                    // Copy ယူပြီးတာကို notification ပေးမယ်
+                    const notification = document.createElement('div');
+                    notification.textContent = 'မဝင်တဲ့ လိုင်းတွေ clipboard မှာရှိပြီးပြီ';
+                    notification.style.cssText = `
+                        position: fixed;
+                        top: 20px;
+                        left: 50%;
+                        transform: translateX(-50%);
+                        background: #27ae60;
+                        color: white;
+                        padding: 10px 20px;
+                        border-radius: 5px;
+                        z-index: 1001;
+                        box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+                    `;
+                    document.body.appendChild(notification);
+                    
+                    setTimeout(() => {
+                        if (notification.parentNode) {
+                            document.body.removeChild(notification);
+                        }
+                        copyButton.textContent = 'Copy';
+                        copyButton.style.background = '#3498db';
+                    }, 2000);
+                })
+                .catch(() => {
+                    alert('Copy မရပါ');
+                });
+        };
+        buttonContainer.appendChild(copyButton);
+    }
+
+    const okButton = document.createElement('button');
+    okButton.textContent = 'OK';
+    okButton.style.cssText = `
+        flex: 1;
+        padding: 10px;
+        background: #2ecc71;
+        color: white;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        font-family: 'Pyidaungsu', sans-serif;
+        ${preparedBets.length === 0 ? 'display: none;' : ''}
+    `;
+    okButton.onclick = function() {
+        document.body.removeChild(overlay);
+        addPreparedBets();
+    };
+
+    // Button order: Cancel - Copy - OK
+    buttonContainer.appendChild(cancelButton);
+    if (invalidLines.length > 0) {
+        // Copy button already added above
+    }
+    if (preparedBets.length > 0) {
+        buttonContainer.appendChild(okButton);
+    }
+
+    dialog.appendChild(buttonContainer);
+    overlay.appendChild(dialog);
+    document.body.appendChild(overlay);
+
+    // Close on overlay click
+    overlay.addEventListener('click', function(e) {
+        if (e.target === overlay) {
+            document.body.removeChild(overlay);
+        }
+    });
+}
     // Function to add prepared bets to main list
     function addPreparedBets() {
         if (preparedBets.length === 0) {
@@ -147,12 +392,14 @@
         }, 100);
     }
 
+    
+
     // Function to parse a single line of bet input
     function parseBetLine(line) {
         const bets = [];
         
         // 1. Check for dynamic types with reverse (ထိပ်, ပိတ်)
-        const dynamicTypes = ['ထိပ်', 'ပိတ်'];
+             const dynamicTypes = ['ထိပ်', 'ပိတ်', 'ဘရိတ်', 'ပါ'];
         for (const dtype of dynamicTypes) {
             if (line.includes(dtype) && line.includes('r')) {
                 const dynamicReverseBets = parseDynamicReverseBet(line, dtype);
@@ -198,6 +445,7 @@
         }
 
         // 8. Check for dynamic types (ထိပ်, ပိတ်, ဘရိတ်, ပါ)
+
         for (const dtype of dynamicTypes) {
             if (line.includes(dtype)) {
                 const dynamicBets = parseDynamicBet(line, dtype);
@@ -712,7 +960,7 @@
             const amount = parseInt(universalMatch[2]);
             
             if (amount >= 100) {
-                const numberStrings = numbersPart.split(/[\/\-\*\.\s]+/);
+                const numberStrings = numbersPart.split(/[\/\-\*\\=\.\s]+/);
                 const numbers = numberStrings.map(str => {
                     const numStr = str.replace(/\D/g, '');
                     if (numStr.length === 1 || numStr.length === 2) {
