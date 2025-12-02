@@ -1,5 +1,4 @@
-
-    // Global variables
+  // Global variables
     let bets = [];
     let totalAmount = 0;
     let closedNumbers = new Set();
@@ -29,41 +28,42 @@
         }
     });
 
-    // Function to normalize text for reverse
-    function normalizeReverseText(text) {
-        return text.replace(/[rR@&]/g, 'r');
-    }
+ // Function to normalize all special text
+function normalizeAllSpecialText(text) {
+    // အပူးအမျိုးမျိုး
+    text = text.replace(/(ပူး|အပူ|ပူ)/gi, 'အပူး');
+    
+    // ပါဝါအမျိုးမျိုး
+    text = text.replace(/(ပါဝါ|ပါဝ|ပဝ)/gi, 'ပါဝါ');
+    
+    // နက္ခတ်အမျိုးမျိုး
+    text = text.replace(/(နက္ခတ်|နက္ခ|နက|နခ|နက်ခက်|နတ်ခပ်)/gi, 'နက္ခ');
+    
+    // ညီကိုအမျိုးမျိုး
+    text = text.replace(/(ညီကို|ညက|သေးကြီး)/gi, 'ညီကို');
+    
+    // ကိုညီအမျိုးမျိုး
+    text = text.replace(/(ကိုညီ|ကည|ကြီးသေး)/gi, 'ကိုညီ');
+    
+    return text;
+}
 
-    // Function to normalize brake text
-    function normalizeBrakeText(text) {
-        return text.replace(/(ဘရိတ်|ဘ|ဘီ|Bk|bk|B|b)/gi, 'ဘရိတ်');
-    }
-
-    // Function to normalize pa text
-    function normalizePaText(text) {
-        return text.replace(/(ပါ|ပတ်|အပတ်|p|P)/gi, 'ပါ');
-    }
- // Function to normalize pa text
-    function normalizePaText(text) {
-        return text.replace(/(ပူး|အပူ|ပူ)/gi, 'အပူး');
-    }
- // Function to normalize pa text
-    function normalizePaText(text) {
-        return text.replace(/(ပါဝ|ပဝ)/gi, 'ပါဝါ');
-    }
- // Function to normalize pa text
-    function normalizePaText(text) {
-        return text.replace(/(နက|နခ|နက်ခက်|နတ်ခပ်)/gi, 'နက္ခ');
-    }
- // Function to normalize pa text
-    function normalizePaText(text) {
-        return text.replace(/(ညက|သေးကြီး)/gi, 'ညီကို');
-    }
- // Function to normalize pa text
-    function normalizePaText(text) {
-        return text.replace(/(ကည|ကြီးသေး)/gi, 'ကိုညီ');
-    }
-
+// Normalize reverse text function ထဲမှာလည်း ခေါ်သုံးရမယ်
+function normalizeReverseText(text) {
+    // Reverse အတွက်
+    let normalized = text.replace(/[rR@&]/g, 'r');
+    
+    // ဘရိတ်အတွက်
+    normalized = normalized.replace(/(ဘရိတ်|ဘ|ဘီ|Bk|bk|B|b)/gi, 'ဘရိတ်');
+    
+    // ပါအတွက်
+    normalized = normalized.replace(/(ပါ|ပတ်|အပတ်|p|P)/gi, 'ပါ');
+    
+    // အထူးစကားလုံးအားလုံးအတွက်
+    normalized = normalizeAllSpecialText(normalized);
+    
+    return normalized;
+}
 
 
     // Function to reverse a number
@@ -161,9 +161,7 @@ function addPreparedBetsWithConfirmation() {
         if (!trimmedLine) continue;
 
         let normalizedLine = normalizeReverseText(trimmedLine);
-        normalizedLine = normalizeBrakeText(normalizedLine);
-        normalizedLine = normalizePaText(normalizedLine);
-
+    
         const lineBets = parseBetLine(normalizedLine);
         if (lineBets.length > 0) {
             preparedBets.push(...lineBets);
