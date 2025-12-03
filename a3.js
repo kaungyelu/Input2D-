@@ -1,4 +1,4 @@
-  // Global variables
+   // Global variables
     let bets = [];
     let totalAmount = 0;
     let closedNumbers = new Set();
@@ -31,7 +31,7 @@
  // Function to normalize all special text
 function normalizeAllSpecialText(text) {
     // အပူးအမျိုးမျိုး
-    text = text.replace(/(ပူး|အပူ|ပူ)/gi, 'အပူး');
+    text = text.replace(/(အပူ|အပူး)/gi, 'အပူး');
     
     // ပါဝါအမျိုးမျိုး
     text = text.replace(/(ပါဝါ|ပါဝ|ပဝ)/gi, 'ပါဝါ');
@@ -57,7 +57,7 @@ function normalizeReverseText(text) {
     normalized = normalized.replace(/(ဘရိတ်|ဘ|ဘီ|Bk|bk|B|b)/gi, 'ဘရိတ်');
     
     // ပါအတွက်
-    normalized = normalized.replace(/(ပါ|အပါ|ပတ်|အပတ်|p|P)/gi, 'ပါ');
+    normalized = normalized.replace(/(ပါ|ပတ်|အပတ်|p|P)/gi, 'ပါ');
     
     // အထူးစကားလုံးအားလုံးအတွက်
     normalized = normalizeAllSpecialText(normalized);
