@@ -1022,15 +1022,65 @@ function showBetConfirmationDialog(preparedBets, invalidLines, invalidText) {
         }
     }
 
-    // Function to save bets
-    function saveBets() {
-        if (bets.length === 0) {
-            alert('မရှိပါ');
-            return;
-        }
-        
-        alert(`လောင်းကြေးများသိမ်းဆည်းပြီးပါပြီ။\nစုစုပေါင်း: ${bets.length} ခု\n${totalAmount.toLocaleString()}`);
+// Function to save bets
+function saveBets() {
+    if (bets.length === 0) {
+        alert('မရှိပါ');
+        return;
     }
+    
+    // Get the key from activeTimeDisplay
+    const activeTimeDisplay = document.getElementById('activeTimeDisplay');
+    if (!activeTimeDisplay) {
+        alert('Active Time မရှိပါ');
+        return;
+    }
+    
+    const key = activeTimeDisplay.textContent.trim();
+    if (!key) {
+        alert('Active Time မရှိပါ');
+        return;
+    }
+    
+    // Prepare current bet data with timestamp
+    const currentBetData = {
+        timestamp: new Date().toISOString(),
+        total: totalAmount,
+        items: bets.map(bet => ({
+            display: bet.display,
+            num: bet.number,
+            number: bet.number,
+            amount: bet.amount,
+            type: bet.type
+        }))
+    };
+    
+    // Get existing data or create new array
+    let savedData = localStorage.getItem(key);
+    let dataArray = savedData ? JSON.parse(savedData) : [];
+    
+    // Add current data to array
+    dataArray.push(currentBetData);
+    
+    // Save back to localStorage
+    localStorage.setItem(key, JSON.stringify(dataArray));
+    
+    // Clear current bets list after saving
+    bets = [];
+    totalAmount = 0;
+    
+    // Update display to show empty list
+    updateDisplay();
+    
+    // Show success message
+    alert(`လောင်းကြေးများသိမ်းဆည်းပြီးပါပြီ။\nစုစုပေါင်း: ${currentBetData.items.length} ခု\n${currentBetData.total.toLocaleString()}\nKey: ${key}`);
+    
+    // Console log for debugging (optional)
+    console.log(`Saved to key: ${key}`);
+    console.log('Data saved:', currentBetData);
+    console.log('Total slips in storage:', dataArray.length);
+}
+   
 
     // Function to delete a bet
     function deleteBet(index) {
