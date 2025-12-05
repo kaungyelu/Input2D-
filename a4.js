@@ -2,21 +2,37 @@
 const a4Btn = document.getElementById('a4Btn');
 a4Btn.addEventListener('click', processAndAddBets);
 
-// Function to check if line contains wheel or dynamic system
-function containsWheelOrDynamicSystem(line) {
+// Function to check if line contains any special system that should be skipped
+function containsSpecialSystem(line) {
+    // ခွေစနစ်
     const wheelKeywords = ['ခွေ', 'ခွေပူး'];
+    // Dynamic စနစ်
     const dynamicKeywords = ['ထိပ်', 'ပိတ်', 'ပါ', 'ဘရိတ်'];
+    // အထူးစနစ်များ
+    const specialKeywords = ['အပူး', 'ပါဝါ', 'နက္ခ', 'ညီကို', 'ကိုညီ'];
+    // စုံ/မစနစ်
+    const evenOddKeywords = ['စုံစုံ', 'မမ', 'စုံမ', 'မစုံ'];
     
-    for (const keyword of wheelKeywords) {
+    // စုံ/မ တစ်လုံးတည်း (ဥပမာ: 1စုံ1000, 2မ500)
+    const singleEvenOddPattern = /^\d(စုံ|မ)/;
+    
+    const allKeywords = [
+        ...wheelKeywords,
+        ...dynamicKeywords, 
+        ...specialKeywords,
+        ...evenOddKeywords
+    ];
+    
+    // သာမန် keywords စစ်ဆေးခြင်း
+    for (const keyword of allKeywords) {
         if (line.includes(keyword)) {
             return true;
         }
     }
     
-    for (const keyword of dynamicKeywords) {
-        if (line.includes(keyword)) {
-            return true;
-        }
+    // စုံ/မ တစ်လုံးတည်း pattern စစ်ဆေးခြင်း
+    if (singleEvenOddPattern.test(line)) {
+        return true;
     }
     
     return false;
@@ -31,8 +47,8 @@ function processAndAddBets() {
     }
 
     const lines = inputText.split('\n');
-    const betEntries = []; // Store all bet entries
-    const remainingLines = []; // Store lines that contain wheel or dynamic system
+    const betEntries = []; // Store all processed bet entries
+    const remainingLines = []; // Store lines that contain special systems
     let lastRegularAmount = null;
     let lastReverseAmount = null;
     let lastAmountIsReverse = false;
@@ -47,99 +63,13 @@ function processAndAddBets() {
         let normalizedLine = normalizeAllSpecialText(trimmedLine);
         normalizedLine = normalizeReverseText(normalizedLine);
         
-        // Check if line contains wheel or dynamic system
-        if (containsWheelOrDynamicSystem(normalizedLine)) {
+        // Check if line contains any special system that should be skipped
+        if (containsSpecialSystem(normalizedLine)) {
             remainingLines.push(trimmedLine); // Keep original line (not normalized)
             continue; // Skip processing this line
         }
         
-        // Case 1: Special cases (အပူး, ပါဝါ, နက္ခ, ညီကို, ကိုညီ)
-        for (const [caseName, caseNumbers] of Object.entries(specialCases)) {
-            if (normalizedLine.includes(caseName)) {
-                const amountStr = normalizedLine.replace(caseName, '').replace(/\D/g, '');
-                const amount = parseInt(amountStr);
-                
-                if (amount && amount >= 100) {
-                    // Store amounts for future numbers
-                    lastRegularAmount = amount;
-                    lastReverseAmount = null;
-                    lastAmountIsReverse = false;
-                    
-                    // Add all special numbers
-                    caseNumbers.forEach(num => {
-                        betEntries.push({ number: num, amount: amount, type: caseName });
-                    });
-                    continue;
-                }
-            }
-        }
-        
-        // Case 2: Even/Odd system (စုံစုံ, မမ, စုံမ, မစုံ)
-        for (const [caseName, caseType] of Object.entries(evenOddCases)) {
-            if (normalizedLine.includes(caseName)) {
-                const amountStr = normalizedLine.replace(caseName, '').replace(/\D/g, '');
-                const amount = parseInt(amountStr);
-                
-                if (amount && amount >= 100) {
-                    // Store amounts for future numbers
-                    lastRegularAmount = amount;
-                    lastReverseAmount = null;
-                    lastAmountIsReverse = false;
-                    
-                    // Generate numbers for Even/Odd system
-                    const numbers = generateEvenOddNumbers(caseType, normalizedLine.includes('r'));
-                    numbers.forEach(num => {
-                        betEntries.push({ number: num, amount: amount, type: caseName });
-                    });
-                    continue;
-                }
-            }
-        }
-        
-        // Case 3: Single digit with Even/Odd (1စုံ, 2မ)
-        const singleEvenOddMatch = normalizedLine.match(/^(\d)(စုံ|မ)r?(\d+)$/);
-        if (singleEvenOddMatch) {
-            const [, digitStr, evenOddType, amountStr] = singleEvenOddMatch;
-            const digit = parseInt(digitStr);
-            const amount = parseInt(amountStr);
-            const includeReverse = normalizedLine.includes('r');
-            
-            if (amount >= 100) {
-                // Store amounts for future numbers
-                lastRegularAmount = amount;
-                lastReverseAmount = includeReverse ? amount : null;
-                lastAmountIsReverse = includeReverse;
-                
-                const numbers = [];
-                if (evenOddType === 'စုံ') {
-                    for (const evenDigit of evenDigits) {
-                        numbers.push(digit * 10 + evenDigit);
-                        if (includeReverse) {
-                            numbers.push(evenDigit * 10 + digit);
-                        }
-                    }
-                } else {
-                    for (const oddDigit of oddDigits) {
-                        numbers.push(digit * 10 + oddDigit);
-                        if (includeReverse) {
-                            numbers.push(oddDigit * 10 + digit);
-                        }
-                    }
-                }
-                
-                const uniqueNumbers = [...new Set(numbers)];
-                uniqueNumbers.forEach(num => {
-                    betEntries.push({ 
-                        number: num, 
-                        amount: amount, 
-                        type: digit + evenOddType + (includeReverse ? ' R' : '') 
-                    });
-                });
-                continue;
-            }
-        }
-        
-        // Case 4: Reverse pattern with two amounts (12-1000r500)
+        // Case 1: Reverse pattern with two amounts (12-1000r500)
         const reverseTwoAmountMatch = normalizedLine.match(/^(\d{1,2})[\-\s\.]*(\d+)\s*r\s*(\d+)$/);
         if (reverseTwoAmountMatch) {
             const [, numStr, amount1Str, amount2Str] = reverseTwoAmountMatch;
@@ -162,7 +92,7 @@ function processAndAddBets() {
             }
         }
         
-        // Case 5: Simple reverse pattern (78r1000)
+        // Case 2: Simple reverse pattern (78r1000)
         const simpleReverseMatch = normalizedLine.match(/^(\d{1,2})\s*r\s*(\d+)$/);
         if (simpleReverseMatch) {
             const [, numStr, amountStr] = simpleReverseMatch;
@@ -184,7 +114,7 @@ function processAndAddBets() {
             }
         }
         
-        // Case 6: Regular number-amount pattern (90-100)
+        // Case 3: Regular number-amount pattern (90-100)
         const regularMatch = normalizedLine.match(/^(\d{1,2})[\-\s\.]*(\d+)$/);
         if (regularMatch && !normalizedLine.includes('r')) {
             const [, numStr, amountStr] = regularMatch;
@@ -203,7 +133,7 @@ function processAndAddBets() {
             }
         }
         
-        // Case 7: Group numbers with amount (12/34/56-1000)
+        // Case 4: Group numbers with amount (12/34/56-1000)
         const groupMatch = normalizedLine.match(/^([\d\/\.\-\s]+?)[\-\s\.]+(\d+)$/);
         if (groupMatch && !normalizedLine.includes('r')) {
             const [, numbersPart, amountStr] = groupMatch;
@@ -238,7 +168,7 @@ function processAndAddBets() {
             }
         }
         
-        // Case 8: Simple number only (34, 56, 45, 23)
+        // Case 5: Simple number only (34, 56, 45, 23)
         const simpleNumberMatch = trimmedLine.match(/^(\d{1,2})$/);
         if (simpleNumberMatch) {
             const num = parseInt(simpleNumberMatch[1]);
@@ -269,7 +199,7 @@ function processAndAddBets() {
             }
         }
         
-        // Case 9: If none of the above, try to parse anyway
+        // Case 6: If none of the above, try to parse anyway
         const fallbackMatch = trimmedLine.match(/(\d+)/g);
         if (fallbackMatch && fallbackMatch.length >= 1) {
             const num = parseInt(fallbackMatch[0]);
@@ -308,7 +238,7 @@ function processAndAddBets() {
             }
         }
         
-        // Case 10: If no pattern matched, keep the original line
+        // Case 7: If no pattern matched, keep the original line
         remainingLines.push(trimmedLine);
     }
     
@@ -331,7 +261,13 @@ function processAndAddBets() {
         
         // Show preview and ask for confirmation
         const totalAmountProcessed = betEntries.reduce((sum, entry) => sum + entry.amount, 0);
-        const confirmMsg = `လောင်းကြေးအရေအတွက်: ${betEntries.length}\nစုစုပေါင်းငွေ: ${totalAmountProcessed.toLocaleString()}\n\nအောက်ပါအတိုင်း format လုပ်ထားပါတယ်:\n${formattedOutput}\n\nခွေ/ထိပ်/ပိတ်/ဘရိတ်/ပါစနစ်များedittext တွင်ကျန်ရှိမည်။Add2နိုပ်ပါ\n\nလောင်းကြေးစာရင်းထဲထည့်မလား?`;
+        let confirmMsg = `လောင်းကြေးအရေအတွက်: ${betEntries.length}\nစုစုပေါင်းငွေ: ${totalAmountProcessed.toLocaleString()}`;
+        
+        if (remainingLines.length > 0) {
+            confirmMsg += `\n\nအထူးစနစ် ${remainingLines.length} ခု ရှာတွေ့ပါသည်။\nဤစနစ်များကို edittext တွင်ကျန်ရှိမည်။`;
+        }
+        
+        confirmMsg += `\n\nလောင်းကြေးစာရင်းထဲထည့်မလား?`;
         
         if (confirm(confirmMsg)) {
             // Convert to bet objects and add to main list
@@ -362,10 +298,10 @@ function processAndAddBets() {
             betInput.value = originalText;
         }
     } else if (remainingLines.length > 0) {
-        // Only wheel/dynamic systems found
-        alert('ခွေ/ခွေပူး/ထိပ်/ပိတ်/ဘရိတ်စနစ်များကို တွေ့ရှိပါသည်။\nဤစနစ်များကို Add1 စနစ်ဖြင့် မထည့်သွင်းပါ။Add2နိုပ်ပါ\nEdittext တွင်ကျန်ရှိနေပါမည်။');
+        // Only special systems found
+        alert(`အထူးစနစ် ${remainingLines.length} ခု ရှာတွေ့ပါသည်။\nဤစနစ်များကို A4 စနစ်ဖြင့် မထည့်သွင်းပါ။\nEdittext တွင်ကျန်ရှိနေပါမည်။`);
         
-        // Keep the original text (wheel/dynamic systems) in the input field
+        // Keep the original special systems in the input field
         betInput.value = remainingLines.join('\n');
     } else {
         alert('လောင်းကြေးအသစ် မရှိပါ။');
