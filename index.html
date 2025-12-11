@@ -5,13 +5,16 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>KK-USER2D Login</title>
 
+<!-- မြန်မာဖောင့်အတွက် Google Fonts -->
+<link href="https://fonts.googleapis.com/css2?family=Padauk:wght@400;700&display=swap" rel="stylesheet">
+
 <style>
-    /* CSS styles remain exactly the same */
+    /* CSS styles with Myanmar font */
     * {
         margin: 0;
         padding: 0;
         box-sizing: border-box;
-        font-family: "Poppins", sans-serif;
+        font-family: "Padauk", "Poppins", sans-serif;
     }
 
     body {
@@ -241,6 +244,7 @@
         opacity: 0;
         transform: translateY(15px);
         animation: charAppear 0.1s forwards;
+        font-family: "Padauk", sans-serif;
     }
 
     @keyframes charAppear {
@@ -430,8 +434,66 @@
     </div>
 
 <script>
-    // Text Animation Script with character-by-character typing
-    document.addEventListener('DOMContentLoaded', function() {
+    
+    async function authenticateUser(name, password) {
+        try {
+            const response = await fetch(
+                `${SUPABASE_URL}/rest/v1/Login?select=*&name=eq.${encodeURIComponent(name)}&pw=eq.${encodeURIComponent(password)}`,
+                {
+                    headers: {
+                        'apikey': SUPABASE_ANON_KEY,
+                        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
+                    }
+                }
+            );
+
+            const Login = await response.json();
+            return Login.length > 0 && Login[0].name === name && Login[0].pw === password;
+        } catch (error) {
+            console.error('Error:', error);
+            return false;
+        }
+    }
+
+    async function checkAutoLogin() {
+        const savedName = localStorage.getItem('name');
+        const savedPassword = localStorage.getItem('pw');
+        
+        if (savedName && savedPassword) {
+            console.log('Checking auto login...');
+            const isValid = await authenticateUser(savedName, savedPassword);
+            if (isValid) {
+                console.log('Auto login successful, redirecting to a.html');
+                // Redirect immediately without animation
+                window.location.href = 'a.html';
+                return true;
+            } else {
+                // Clear invalid credentials
+                localStorage.removeItem('name');
+                localStorage.removeItem('pw');
+            }
+        }
+        return false;
+    }
+
+    // Check auto login immediately when page loads
+    document.addEventListener('DOMContentLoaded', async function() {
+        // First check if we should auto login
+        const shouldAutoLogin = await checkAutoLogin();
+        
+        // If auto login was successful, stop here (page will redirect)
+        if (shouldAutoLogin) {
+            return;
+        }
+        
+        // If no auto login, start animation
+        startTextAnimation();
+        
+        // Setup login functionality
+        setupLoginFunctionality();
+    });
+
+    function startTextAnimation() {
         const textContainer = document.getElementById('textScrollContainer');
         const typingContainer = document.getElementById('typingContainer');
         
@@ -479,9 +541,6 @@
                         textContainer.style.display = 'none';
                         // Show login form
                         document.querySelector('.card').style.display = 'block';
-                        
-                        // Start auto login check after animation
-                        checkAutoLogin();
                     }, 1000);
                 }, 1000);
                 return;
@@ -539,54 +598,16 @@
         
         // Start typing animation
         setTimeout(typeNextCharacter, 500);
-    });
-
-    // Existing login functionality (unchanged)
-    const SUPABASE_URL = 'https://ugfmzaxrbxvjecqpezdm.supabase.co';
-    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVnZm16YXhyYnh2amVjcXBlemRtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ5OTc0NDMsImV4cCI6MjA4MDU3MzQ0M30.rEjWWdKVc_oikOFzQeBJ3I1j3Xke4Pla5DMbsQtugjU';
-
-    async function authenticateUser(name, password) {
-        try {
-            const response = await fetch(
-                `${SUPABASE_URL}/rest/v1/Login?select=*&name=eq.${encodeURIComponent(name)}&pw=eq.${encodeURIComponent(password)}`,
-                {
-                    headers: {
-                        'apikey': SUPABASE_ANON_KEY,
-                        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
-                    }
-                }
-            );
-
-            const Login = await response.json();
-            return Login.length > 0 && Login[0].name === name && Login[0].pw === password;
-        } catch (error) {
-            console.error('Error:', error);
-            return false;
-        }
     }
 
-    async function checkAutoLogin() {
-        const savedName = localStorage.getItem('name');
-        const savedPassword = localStorage.getItem('pw');
-        
-        if (savedName && savedPassword) {
-            const isValid = await authenticateUser(savedName, savedPassword);
-            if (isValid) {
-                window.location.href = 'a.html';
-            }
-        }
-    }
-
-    // DOMContentLoaded event for login functionality
-    document.addEventListener('DOMContentLoaded', () => {
+    function setupLoginFunctionality() {
         const nameInput = document.getElementById('nameInput');
         const passwordInput = document.getElementById('passwordInput');
         const saveBtn = document.getElementById('saveBtn');
         const statusIndicator = document.getElementById('statusIndicator');
         const errorMessage = document.getElementById('errorMessage');
 
-        // checkAutoLogin() is now called after animation
-
+        // Load saved credentials
         const savedName = localStorage.getItem('name');
         const savedPassword = localStorage.getItem('pw');
 
@@ -607,6 +628,7 @@
                 return;
             }
 
+            // Save credentials immediately
             localStorage.setItem('name', name);
             localStorage.setItem('pw', password);
 
@@ -624,6 +646,7 @@
                 errorMessage.classList.add('show');
                 statusIndicator.classList.remove('active');
                 statusIndicator.classList.add('error');
+                // Only remove credentials if authentication fails
                 localStorage.removeItem('name');
                 localStorage.removeItem('pw');
             }
@@ -634,7 +657,7 @@
                 saveBtn.click();
             }
         });
-    });
+    }
 </script>
 
 </body>
