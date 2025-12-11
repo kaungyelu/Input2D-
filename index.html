@@ -1,0 +1,641 @@
+<!DOCTYPE html>
+<html lang="my">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>KK-USER2D Login</title>
+
+<style>
+    /* CSS styles remain exactly the same */
+    * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+        font-family: "Poppins", sans-serif;
+    }
+
+    body {
+        min-height: 100vh;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        padding: 20px;
+        background: radial-gradient(circle at top, #3b3bff 0%, #000018 80%);
+        overflow: hidden;
+    }
+
+    body::before, body::after {
+        content: '';
+        position: absolute;
+        width: 200px;
+        height: 200px;
+        border-radius: 50%;
+        filter: blur(80px);
+        animation: float 12s infinite linear;
+        z-index: -1;
+    }
+
+    body::before {
+        background: #ff00ff;
+        top: -40px;
+        left: -40px;
+    }
+
+    body::after {
+        background: #00eaff;
+        bottom: -40px;
+        right: -40px;
+        animation-direction: reverse;
+    }
+
+    @keyframes float {
+        0% { transform: translate(0,0); }
+        50% { transform: translate(20px, -20px); }
+        100% { transform: translate(0,0); }
+    }
+
+    .card {
+        width: 100%;
+        max-width: 420px;
+        padding: 30px 25px;
+        border-radius: 25px;
+        background: rgba(255, 255, 255, 0.08);
+        backdrop-filter: blur(15px);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        box-shadow: 0 0 30px rgba(0, 255, 255, 0.2);
+        transform: translateY(0);
+        transition: 0.35s ease;
+    }
+
+    .card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 0 50px rgba(255, 0, 255, 0.35);
+    }
+
+    .card-header {
+        text-align: center;
+        margin-bottom: 25px;
+    }
+
+    .card-header h1 {
+        font-size: 28px;
+        font-weight: 700;
+        background: linear-gradient(90deg, #00eaff, #ff00ff);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+    }
+
+    .card-header p {
+        font-size: 13px;
+        color: #ccc;
+        margin-top: 5px;
+    }
+
+    .input-group {
+        margin-bottom: 20px;
+    }
+
+    .label {
+        color: #ddd;
+        font-size: 13px;
+        font-weight: 600;
+        margin-bottom: 8px;
+        display: block;
+    }
+
+    .input-box {
+        position: relative;
+    }
+
+    .input-box input {
+        width: 100%;
+        padding: 16px 18px 16px 50px;
+        border-radius: 12px;
+        border: 2px solid rgba(255, 255, 255, 0.15);
+        background: rgba(255, 255, 255, 0.05);
+        color: white;
+        font-size: 15px;
+        transition: 0.3s ease;
+    }
+
+    .input-box input:focus {
+        border-color: #00eaff;
+        box-shadow: 0 0 10px rgba(0, 255, 255, 0.4);
+        background: rgba(255, 255, 255, 0.12);
+        outline: none;
+    }
+
+    .icon {
+        position: absolute;
+        left: 16px;
+        top: 50%;
+        transform: translateY(-50%);
+        font-size: 18px;
+        color: #00eaff;
+    }
+
+    #saveBtn {
+        width: 100%;
+        padding: 16px;
+        margin-top: 10px;
+        border: none;
+        border-radius: 12px;
+        background: linear-gradient(90deg, #00eaff, #ff00ff);
+        font-size: 16px;
+        font-weight: 600;
+        color: #fff;
+        cursor: pointer;
+        transition: 0.3s ease;
+        box-shadow: 0 0 20px rgba(0, 255, 255, 0.4);
+    }
+
+    #saveBtn:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 0 30px rgba(255, 0, 255, 0.45);
+    }
+
+    #saveBtn:active {
+        transform: scale(0.98);
+    }
+
+    .status-indicator {
+        height: 4px;
+        border-radius: 2px;
+        margin-top: 20px;
+        background: linear-gradient(90deg, #00eaff, #ff00ff);
+        opacity: 0;
+        transition: 0.3s;
+    }
+
+    .status-indicator.active {
+        opacity: 1;
+        animation: pulseGlow 2s infinite;
+    }
+
+    .status-indicator.error {
+        background: linear-gradient(90deg, #ff0000, #ff5555);
+        opacity: 1;
+        animation: pulseGlowRed 2s infinite;
+    }
+
+    @keyframes pulseGlow {
+        0%,100% { box-shadow: 0 0 8px #00eaff; }
+        50% { box-shadow: 0 0 12px #ff00ff; }
+    }
+
+    @keyframes pulseGlowRed {
+        0%,100% { box-shadow: 0 0 8px #ff0000; }
+        50% { box-shadow: 0 0 12px #ff5555; }
+    }
+
+    .error-message {
+        color: #ff5555;
+        font-size: 13px;
+        text-align: center;
+        margin-top: 12px;
+        min-height: 18px;
+        opacity: 0;
+        transition: 0.3s;
+    }
+
+    .error-message.show {
+        opacity: 1;
+    }
+
+    /* Text Typing Animation Styles - Responsive */
+    .text-scroll-container {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        background: radial-gradient(circle at top, #3b3bff 0%, #000018 80%);
+        z-index: 9999;
+        overflow: hidden;
+        padding: 20px;
+    }
+
+    .typing-container {
+        width: 100%;
+        max-width: 800px;
+        text-align: center;
+    }
+
+    .typing-line {
+        font-size: 1.8rem;
+        font-weight: 800;
+        line-height: 1.5;
+        margin-bottom: 15px;
+        min-height: 60px;
+        display: flex;
+        justify-content: center;
+        flex-wrap: wrap;
+        gap: 3px;
+    }
+
+    .typing-char {
+        display: inline-block;
+        opacity: 0;
+        transform: translateY(15px);
+        animation: charAppear 0.1s forwards;
+    }
+
+    @keyframes charAppear {
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    .cursor {
+        display: inline-block;
+        width: 2px;
+        height: 35px;
+        background: linear-gradient(to bottom, #00eaff, #ff00ff);
+        margin-left: 1px;
+        animation: blink 1s infinite;
+        vertical-align: middle;
+    }
+
+    @keyframes blink {
+        0%, 50% { opacity: 1; }
+        51%, 100% { opacity: 0; }
+    }
+
+    .text-glow {
+        text-shadow: 0 0 15px currentColor;
+    }
+
+    /* Responsive styles */
+    @media (max-width: 768px) {
+        .typing-line {
+            font-size: 1.5rem;
+            min-height: 50px;
+            margin-bottom: 12px;
+        }
+        
+        .cursor {
+            height: 30px;
+        }
+        
+        .card {
+            max-width: 380px;
+            padding: 25px 20px;
+        }
+        
+        .card-header h1 {
+            font-size: 24px;
+        }
+        
+        .card-header p {
+            font-size: 12px;
+        }
+        
+        .input-box input {
+            padding: 14px 16px 14px 45px;
+            font-size: 14px;
+        }
+        
+        .icon {
+            font-size: 16px;
+            left: 14px;
+        }
+        
+        #saveBtn {
+            padding: 14px;
+            font-size: 15px;
+        }
+    }
+
+    @media (max-width: 480px) {
+        .typing-line {
+            font-size: 1.2rem;
+            min-height: 40px;
+            margin-bottom: 10px;
+            gap: 2px;
+        }
+        
+        .cursor {
+            height: 25px;
+            width: 1.5px;
+        }
+        
+        .text-glow {
+            text-shadow: 0 0 10px currentColor;
+        }
+        
+        body::before, body::after {
+            width: 150px;
+            height: 150px;
+            filter: blur(60px);
+        }
+        
+        .card {
+            max-width: 340px;
+            padding: 20px 18px;
+            border-radius: 20px;
+        }
+        
+        .card-header h1 {
+            font-size: 22px;
+        }
+        
+        .input-box input {
+            padding: 13px 15px 13px 42px;
+            font-size: 13px;
+        }
+        
+        .icon {
+            font-size: 15px;
+        }
+        
+        #saveBtn {
+            padding: 13px;
+            font-size: 14px;
+        }
+        
+        .error-message {
+            font-size: 12px;
+        }
+    }
+
+    @media (max-width: 360px) {
+        .typing-line {
+            font-size: 1rem;
+            min-height: 35px;
+        }
+        
+        .cursor {
+            height: 20px;
+        }
+        
+        .card {
+            max-width: 300px;
+            padding: 18px 15px;
+        }
+        
+        .card-header h1 {
+            font-size: 20px;
+        }
+        
+        .card-header p {
+            font-size: 11px;
+        }
+        
+        .input-box input {
+            padding: 12px 14px 12px 40px;
+        }
+    }
+</style>
+</head>
+
+<body>
+
+    <!-- Text Animation Container -->
+    <div class="text-scroll-container" id="textScrollContainer">
+        <div class="typing-container" id="typingContainer">
+            <!-- Lines will be added dynamically by JavaScript -->
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header">
+            <h1>KK-USER2D</h1>
+            <p>ကံကောင်းခြင်းများ ပိုင်ဆိုင်ကြပါစေ</p>
+        </div>
+
+        <div class="input-group">
+            <label class="label">Name</label>
+            <div class="input-box">
+                <div class="icon">👤</div>
+                <input type="text" id="nameInput" placeholder="Enter name">
+            </div>
+        </div>
+
+        <div class="input-group">
+            <label class="label">Password</label>
+            <div class="input-box">
+                <div class="icon">🔑</div>
+                <input type="password" id="passwordInput" placeholder="Enter password">
+            </div>
+        </div>
+
+        <button id="saveBtn">Login</button>
+
+        <div class="error-message" id="errorMessage"></div>
+        <div class="status-indicator" id="statusIndicator"></div>
+    </div>
+
+<script>
+    // Text Animation Script with character-by-character typing
+    document.addEventListener('DOMContentLoaded', function() {
+        const textContainer = document.getElementById('textScrollContainer');
+        const typingContainer = document.getElementById('typingContainer');
+        
+        // Hide login form initially
+        document.querySelector('.card').style.display = 'none';
+        
+        // Text lines to display
+        const textLines = [
+            "မဂ်လာပါ ခမျာ",
+            "2Dစာရင်းအင်းများကို",
+            "လွယ်ကူမြန်ဆန်စွာ လုပ်ဆောင်နိုင်ရန်",
+            "KK-userမှာ ဖန်တီးထားခြင်းဖြစ်ပါသည်",
+            "ယခု Webappအား အသုံးပြုန်ရန်",
+            "နှစ်သိန်းကျပ် (၂၀၀၀၀၀ကျပ်)တိတိ ကျသင့်ပါမည်",
+            "Sever ကြေးပေးသွင်းရန် မှာ",
+            "အလုပ်ပေါ်မူတည်ပါ Data မများပါက မလိုအပ်နိုင်",
+            "လိုအပ်လာလျင်လည်း ပြောကြားပေးပါမည်"
+        ];
+        
+        // Color palette for characters
+        const colors = [
+            '#00eaff', '#ff00ff', '#00ffaa', '#ffaa00', '#aa00ff',
+            '#ff0066', '#00ff66', '#ff6600', '#6600ff', '#ff66ff'
+        ];
+        
+        let lineIndex = 0;
+        let charIndex = 0;
+        
+        function createLineElement(lineText) {
+            const lineDiv = document.createElement('div');
+            lineDiv.className = 'typing-line';
+            typingContainer.appendChild(lineDiv);
+            return lineDiv;
+        }
+        
+        function typeNextCharacter() {
+            if (lineIndex >= textLines.length) {
+                // All lines typed, show login form
+                setTimeout(() => {
+                    // Hide animation container
+                    textContainer.style.opacity = '0';
+                    textContainer.style.transition = 'opacity 1s ease';
+                    
+                    setTimeout(() => {
+                        textContainer.style.display = 'none';
+                        // Show login form
+                        document.querySelector('.card').style.display = 'block';
+                        
+                        // Start auto login check after animation
+                        checkAutoLogin();
+                    }, 1000);
+                }, 1000);
+                return;
+            }
+            
+            const currentLine = textLines[lineIndex];
+            
+            // Create new line if starting a new line
+            if (charIndex === 0) {
+                createLineElement(currentLine);
+            }
+            
+            const currentLineElement = typingContainer.lastElementChild;
+            
+            if (charIndex < currentLine.length) {
+                // Create character span
+                const charSpan = document.createElement('span');
+                charSpan.className = 'typing-char text-glow';
+                charSpan.textContent = currentLine[charIndex];
+                
+                // Random color for each character
+                const randomColor = colors[Math.floor(Math.random() * colors.length)];
+                charSpan.style.color = randomColor;
+                
+                // Add animation delay based on character index
+                charSpan.style.animationDelay = `${charIndex * 0.05}s`;
+                
+                currentLineElement.appendChild(charSpan);
+                
+                charIndex++;
+                
+                // Add cursor
+                const cursor = currentLineElement.querySelector('.cursor');
+                if (cursor) cursor.remove();
+                
+                const cursorSpan = document.createElement('span');
+                cursorSpan.className = 'cursor';
+                currentLineElement.appendChild(cursorSpan);
+                
+                // Type next character
+                setTimeout(typeNextCharacter, 50);
+            } else {
+                // Remove cursor from current line
+                const cursor = currentLineElement.querySelector('.cursor');
+                if (cursor) cursor.remove();
+                
+                // Move to next line
+                lineIndex++;
+                charIndex = 0;
+                
+                // Wait before starting next line
+                setTimeout(typeNextCharacter, 600);
+            }
+        }
+        
+        // Start typing animation
+        setTimeout(typeNextCharacter, 500);
+    });
+
+    // Existing login functionality (unchanged)
+    const SUPABASE_URL = 'https://ugfmzaxrbxvjecqpezdm.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVnZm16YXhyYnh2amVjcXBlemRtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ5OTc0NDMsImV4cCI6MjA4MDU3MzQ0M30.rEjWWdKVc_oikOFzQeBJ3I1j3Xke4Pla5DMbsQtugjU';
+
+    async function authenticateUser(name, password) {
+        try {
+            const response = await fetch(
+                `${SUPABASE_URL}/rest/v1/Login?select=*&name=eq.${encodeURIComponent(name)}&pw=eq.${encodeURIComponent(password)}`,
+                {
+                    headers: {
+                        'apikey': SUPABASE_ANON_KEY,
+                        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
+                    }
+                }
+            );
+
+            const Login = await response.json();
+            return Login.length > 0 && Login[0].name === name && Login[0].pw === password;
+        } catch (error) {
+            console.error('Error:', error);
+            return false;
+        }
+    }
+
+    async function checkAutoLogin() {
+        const savedName = localStorage.getItem('name');
+        const savedPassword = localStorage.getItem('pw');
+        
+        if (savedName && savedPassword) {
+            const isValid = await authenticateUser(savedName, savedPassword);
+            if (isValid) {
+                window.location.href = 'a.html';
+            }
+        }
+    }
+
+    // DOMContentLoaded event for login functionality
+    document.addEventListener('DOMContentLoaded', () => {
+        const nameInput = document.getElementById('nameInput');
+        const passwordInput = document.getElementById('passwordInput');
+        const saveBtn = document.getElementById('saveBtn');
+        const statusIndicator = document.getElementById('statusIndicator');
+        const errorMessage = document.getElementById('errorMessage');
+
+        // checkAutoLogin() is now called after animation
+
+        const savedName = localStorage.getItem('name');
+        const savedPassword = localStorage.getItem('pw');
+
+        if (savedName) nameInput.value = savedName;
+        if (savedPassword) passwordInput.value = savedPassword;
+
+        saveBtn.addEventListener('click', async () => {
+            const name = nameInput.value.trim();
+            const password = passwordInput.value.trim();
+
+            errorMessage.textContent = '';
+            errorMessage.classList.remove('show');
+            statusIndicator.classList.remove('error');
+
+            if (!name || !password) {
+                errorMessage.textContent = 'Name နှင့် Password ထည့်သွင်းပါ';
+                errorMessage.classList.add('show');
+                return;
+            }
+
+            localStorage.setItem('name', name);
+            localStorage.setItem('pw', password);
+
+            statusIndicator.classList.add('active');
+
+            const isValid = await authenticateUser(name, password);
+
+            if (isValid) {
+                setTimeout(() => {
+                    statusIndicator.classList.remove('active');
+                    window.location.href = 'a.html';
+                }, 1000);
+            } else {
+                errorMessage.textContent = 'Name သို့မဟုတ် Password မှားနေပါသည်';
+                errorMessage.classList.add('show');
+                statusIndicator.classList.remove('active');
+                statusIndicator.classList.add('error');
+                localStorage.removeItem('name');
+                localStorage.removeItem('pw');
+            }
+        });
+
+        passwordInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                saveBtn.click();
+            }
+        });
+    });
+</script>
+
+</body>
+</html>
